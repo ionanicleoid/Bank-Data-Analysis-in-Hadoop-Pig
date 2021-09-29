@@ -1,0 +1,122 @@
+--Question 3 
+
+--Load data with data types assigned to each column.
+
+data = lOAD 'bank-full.csv' USING PigStorage(';')AS (age:int, job:chararray, marital:chararray, education:chararray, default:chararray, balance:chararray, housing:chararray, loan:chararray, contact:chararray, day:int, month:chararray, duration:chararray, campaign:int, pdays:chararray, previous:chararray, poutcome:chararray, y:chararray);
+
+
+--Remove any duplicate values
+
+data = DISTINCT data;
+
+--Group data by every column to perform calculations
+
+groupage = GROUP data ALL;
+
+
+--Calculate maximum age in dataset
+
+maxAge = FOREACH groupage GENERATE group, MAX(data.age);
+
+--Show maximum age
+
+DUMP maxAge;
+
+
+--Calculate minimum age in dataset
+
+minAge = FOREACH groupage GENERATE group, MIN(data.age);
+
+--Show minimum age
+
+DUMP minAge;
+
+
+
+--select the successful campaigns
+
+filtering = FILTER data BY poutcome=='"success"';
+
+generated = FOREACH filtering GENERATE age, education, default, housing, loan;
+
+--create age categories
+
+SPLIT generated INTO 
+	age18to34 IF age>=18 AND age<34, 
+	age35to54 IF age>=35 AND age<54, 
+	age55to74 IF age>=55 AND age<74, 
+	age75to95 IF age>=75 AND age<95;
+
+
+
+--Group by the education, default, housing, loan columns in the relation
+
+grou18to34 = GROUP age18to34 BY (education, default, housing, loan);
+
+--Count the top characteristics
+
+grouped18to34 = FOREACH grou18to34 GENERATE group, COUNT(age18to34) AS counted18to34;
+
+--Order top characteristics in descending order in terms of count
+
+ordered18to34 = ORDER grouped18to34 BY counted18to34 DESC;
+
+--Show the most common characteristics for age18to34
+
+DUMP ordered18to34;
+
+
+
+--Group by the education, default, housing, loan columns in the relation
+
+gru35to54 = GROUP age35to54 BY (education, default, housing, loan);
+
+--Count the top characteristics
+
+grouped35to54 = FOREACH gru35to54  GENERATE group, COUNT(age35to54) AS counted35to54;
+
+--Order top characteristics in descending order in terms of count
+
+ordered35to54 = ORDER grouped35to54 BY counted35to54 DESC;
+
+--Show the most common characteristics for age35to54
+
+DUMP ordered35to54;
+
+
+
+--Group by the education, default, housing, loan columns in the relation
+
+grou55to74 = GROUP age55to74 BY (education, default, housing, loan);
+
+--Count the top characteristics
+
+grouped55to74 = FOREACH grou55to74 GENERATE group, COUNT(age55to74) AS counted55to74;
+
+--Order top characteristics in descending order in terms of count
+
+ordered55to74 = ORDER grouped55to74 BY counted55to74 DESC;
+
+--Show the most common characteristics for aged55to74
+
+DUMP ordered55to74;
+
+
+
+--Group by the education, default, housing, loan columns in the relation
+
+grou75to95 = GROUP age75to95 BY (education, default, housing, loan);
+
+--Count the top characteristics
+
+grouped75to95 = FOREACH grou75to95 GENERATE group, COUNT(age75to95) AS counted75to95;
+
+--Order top characteristics in descending order in terms of count
+
+ordered75to95 = ORDER grouped75to95 BY counted75to95 DESC;
+
+--Show the most common characteristics for age75to95
+
+DUMP ordered75to95;
+
+

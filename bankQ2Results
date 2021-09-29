@@ -1,0 +1,139 @@
+[training@localhost ~]$ pig -x local
+2021-07-23 09:56:51,673 INFO org.apache.pig.Main: Apache Pig version 0.10.0-cdh4.2.1 (rexported) compiled Apr 22 2013, 12:04:54
+2021-07-23 09:56:51,673 INFO org.apache.pig.Main: Logging error messages to: /home/training/pig_1627048611672.log
+grunt> run bankQ2
+grunt> 
+grunt> --Question 2 
+grunt> 
+grunt> --Load data with data types assigned to each column.
+grunt> 
+grunt> data = lOAD 'bank-full.csv' USING PigStorage(';')AS (age:chararray, job:chararray, marital:chararray, education:chararray, default:chararray, balance:chararray, housing:chararray, loan:chararray, contact:chararray, day:int, month:chararray, duration:chararray, campaign:int, pdays:chararray, previous:chararray, poutcome:chararray, y:chararray);
+grunt> 
+grunt> --Remove any duplicate values
+grunt> 
+grunt> data = DISTINCT data;
+grunt> 
+grunt> 
+grunt> --Create the relation relation1 selecting day, month, poutcome columns.
+grunt> 
+grunt> relation1 = FOREACH data GENERATE day, month, poutcome;
+grunt> 
+grunt> 
+grunt> --Filter for only the successful outcomes for the relation filtered.
+grunt> 
+grunt> filtered = FILTER relation1 BY poutcome=='"success"';
+grunt> 
+grunt> 
+grunt> 
+grunt> --Split the successful calls into different quarters of the year.
+grunt> 
+grunt> 
+grunt> SPLIT filtered INTO 
+>>     Q1 IF month=='"jan"' OR  month=='"feb"' OR month=='"mar"', 
+>>     Q2 IF month=='"apr"' OR month=='"may"' OR month=='"jun"', 
+>>     Q3 IF month=='"jul"' OR month=='"aug"' OR month=='"sep"', 
+>>     Q4 IF month=='"oct"' OR month=='"nov"' OR month=='"dec"';
+grunt> 
+grunt> 
+grunt> 
+grunt> --Quarter 1
+grunt> 
+grunt> --Group the quarter 1 relation by all to allow for a count calculation 
+grunt> 
+grunt> quarter1grouped = GROUP Q1 ALL;
+grunt> 
+grunt> --Generate a count of the total successful calls for quarter 1
+grunt> 
+grunt> quarter1 = FOREACH quarter1grouped GENERATE group, COUNT(Q1.poutcome) AS counts1;
+grunt> 
+grunt> 
+grunt> 
+grunt> 
+grunt> --Quarter 2 
+grunt> 
+grunt> --Group the quarter 2 relation by all to allow for a count calculation 
+grunt> 
+grunt> quarter2grouped = GROUP Q2 ALL;
+grunt> 
+grunt> --Generate a count of the total successful calls for quarter 2
+grunt> 
+grunt> quarter2 = FOREACH quarter2grouped GENERATE group, COUNT(Q2.poutcome) AS counts2;
+grunt> 
+grunt> 
+grunt> 
+grunt> 
+grunt> --Quarter 3
+grunt> 
+grunt> --Group the quarter 3 relation by all to allow for a count calculation 
+grunt> 
+grunt> quarter3grouped = GROUP Q3 ALL;
+grunt> 
+grunt> --Generate a count of the total successful calls for quarter 3
+grunt> 
+grunt> quarter3 = FOREACH quarter3grouped GENERATE group, COUNT(Q3.poutcome) AS counts3;
+grunt> 
+grunt> 
+grunt> 
+grunt> 
+grunt> 
+grunt> 
+grunt> --Quarter 4
+grunt> 
+grunt> --Group the quarter 3 relation by all to allow for a count calculation 
+grunt> 
+grunt> quarter4grouped = GROUP Q4 ALL;
+grunt> 
+grunt> --Generate a count of the total successful calls for quarter 4
+grunt> 
+grunt> quarter4 = FOREACH quarter4grouped GENERATE group, COUNT(Q4.poutcome) AS counts4;
+grunt> 
+grunt> 
+grunt> 
+grunt> 
+grunt> --Show the number of successful calls within the Quarters
+grunt> 
+grunt> 
+grunt> DUMP quarter1;
+(all,267)
+grunt> 
+grunt> DUMP quarter2;
+(all,483)
+grunt> 
+grunt> DUMP quarter3;
+(all,438)
+grunt> 
+grunt> DUMP quarter4;
+(all,323)
+grunt> 
+grunt> 
+grunt> --The Most Successful Month
+grunt> 
+grunt> --Group by quarter to find the top month of successful calls.
+grunt> 
+grunt> monthfiltered = GROUP filtered BY month;
+grunt> 
+grunt> --Generate a count of the total successful calls per month
+grunt> 
+grunt> monthfiltered = FOREACH monthfiltered GENERATE group, COUNT(filtered.poutcome) AS counts;
+grunt> 
+grunt> ordered = ORDER monthfiltered BY counts DESC;
+grunt> 
+grunt> DUMP ordered;
+("may",236)
+("aug",207)
+("feb",143)
+("nov",141)
+("sep",132)
+("oct",131)
+("apr",129)
+("jun",118)
+("jul",99)
+("jan",64)
+("mar",60)
+("dec",51)
+grunt> 
+grunt> 
+grunt> 
+grunt> 
+grunt> 
+grunt> 

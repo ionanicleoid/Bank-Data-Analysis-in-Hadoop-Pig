@@ -1,0 +1,156 @@
+--Question 1
+
+--Load the data by assigning data type to each column of the dataset
+
+data = lOAD 'bank-full.csv' USING PigStorage(';')AS (age:chararray, job:chararray, marital:chararray, education:chararray, default:chararray, balance:chararray, housing:chararray, loan:chararray, contact:chararray, day:int, month:chararray, duration:chararray, campaign:int, pdays:chararray, previous:int, poutcome:chararray, y:chararray);
+
+--Remove any duplicate values
+
+data = DISTINCT data;
+
+
+
+--Create the relation relation1 selecting campaign, previous, pdays, poutcome
+
+countriesSchema = FOREACH data GENERATE campaign, poutcome;
+
+
+
+--Filter for only the successful outcomes for the relation filteredsuccess.
+
+filteredsuccess = FILTER countriesSchema BY poutcome=='"success"';
+
+
+-- Calculate the highest amounts of calls made through marketing to customers
+
+orderedsuccess = ORDER filteredsuccess BY campaign DESC;
+
+
+--Calculate the top 5 highest amount of phone calls made.
+
+orderedsuccesslimit = LIMIT orderedsuccess 5;
+
+
+
+--Show the top 5 highest calls made to customers that had a successful outcome.
+
+DUMP orderedsuccesslimit;
+
+
+
+--Group the filtered successful relation to calculate an average.
+
+groupedsuccess = GROUP filteredsuccess BY poutcome;
+
+
+--Calculate the average amount of contacts to a customer.
+
+averagesuccess = FOREACH groupedsuccess GENERATE AVG(filteredsuccess.campaign);
+
+
+--Show the average amount of contacts to a customer.
+
+DUMP averagesuccess;
+
+
+
+--Filter data for the failed outcomes.
+
+filteredfailure = FILTER countriesSchema BY poutcome=='"failure"';
+
+
+
+-- Calculate the highest amounts of calls made to customers that had a failed outcome.
+
+orderedfailure = ORDER filteredfailure BY campaign DESC;
+
+
+--Calculate the top 5 highest amount of phone calls made that failed.
+
+orderedfailurelimit = LIMIT orderedfailure 5;
+
+
+--Show the top 5 highest calls made to customers that had a failed outcome.
+
+DUMP orderedfailurelimit;
+
+
+
+--Group the filtered successful relation to calculate an average.
+
+groupedfailure = GROUP filteredfailure BY poutcome;
+
+--Calculate the average amount of contacts to a customer that failed.
+
+averagefailure = FOREACH groupedfailure GENERATE AVG(filteredfailure.campaign);
+
+--Show the average amount of contacts to a customer that failed.
+
+DUMP averagefailure;
+
+
+/*Join the two relations to create a relation that contains only data with either a successful or failed calls and exclude data with an unknown outcome or an other outcome.
+*/
+
+joined = UNION filteredsuccess, filteredfailure;
+
+
+--Apply a filter again to divide into successful and failed calls.
+
+filteredsuccess = FILTER joined BY poutcome=='"success"';
+
+filteredfailure = FILTER joined BY poutcome=='"failure"';
+
+
+
+--Create a relation for total calls where it groups all the columns for a calculation
+
+totaljoined = GROUP joined ALL;
+
+--Generate a count for total calls with an outcome in the data.
+
+totalCalls = FOREACH totaljoined GENERATE group, COUNT(joined) AS joinedCounted;
+
+--Flatten the count value for calculating a percentage;
+
+totalCalls = FOREACH totalCalls GENERATE FLATTEN(joinedCounted); 
+
+
+
+--Create a relation for successful calls where it groups all the columns for a calculation
+
+joinedsuccess = GROUP filteredsuccess ALL;
+
+--Generate a count for successful calls with an outcome in the data.
+
+successCalls = FOREACH joinedsuccess GENERATE group, COUNT(filteredsuccess) AS filteredsuccessCounted;
+
+--Flatten the count value for calculating a percentage;
+
+successCalls = FOREACH successCalls GENERATE FLATTEN(filteredsuccessCounted); 
+
+
+--Create a relation for failed calls where it groups all the columns for a calculation
+
+joinedfailure = GROUP filteredfailure ALL;
+
+--Generate a count for successful calls with an outcome in the data.
+
+failedCalls = FOREACH joinedfailure GENERATE group, COUNT(filteredfailure) AS filteredfailureCounted;
+
+--Flatten the count value for calculating a percentage;
+
+failedCalls = FOREACH failedCalls GENERATE FLATTEN(filteredfailureCounted); 
+
+
+/* Out of the joined relation where it only includes data with an outcome group all columns to produce a percentage.
+*/
+
+grouped = GROUP joined ALL;
+
+--Calculate the percentage of successful calls from the total calls
+
+percentage = FOREACH grouped GENERATE ((float)successCalls.filteredsuccessCounted/(float)totalCalls.joinedCounted)*100;
+
+DUMP percentage;
+

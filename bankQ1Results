@@ -1,0 +1,175 @@
+[training@localhost ~]$ pig -x local
+2021-07-23 09:56:25,608 INFO org.apache.pig.Main: Apache Pig version 0.10.0-cdh4.2.1 (rexported) compiled Apr 22 2013, 12:04:54
+2021-07-23 09:56:25,609 INFO org.apache.pig.Main: Logging error messages to: /home/training/pig_1627048585606.log
+grunt> run bankQ1
+grunt> --Question 1
+grunt> 
+grunt> --Load the data by assigning data type to each column of the dataset
+grunt> 
+grunt> data = lOAD 'bank-full.csv' USING PigStorage(';')AS (age:chararray, job:chararray, marital:chararray, education:chararray, default:chararray, balance:chararray, housing:chararray, loan:chararray, contact:chararray, day:int, month:chararray, duration:chararray, campaign:int, pdays:chararray, previous:int, poutcome:chararray, y:chararray);
+grunt> 
+grunt> --Remove any duplicate values
+grunt> 
+grunt> data = DISTINCT data;
+grunt> 
+grunt> 
+grunt> 
+grunt> --Create the relation relation1 selecting campaign, previous, pdays, poutcome
+grunt> 
+grunt> countriesSchema = FOREACH data GENERATE campaign, poutcome;
+grunt> 
+grunt> 
+grunt> 
+grunt> --Filter for only the successful outcomes for the relation filteredsuccess.
+grunt> 
+grunt> filteredsuccess = FILTER countriesSchema BY poutcome=='"success"';
+grunt> 
+grunt> 
+grunt> -- Calculate the highest amounts of calls made through marketing to customers
+grunt> 
+grunt> orderedsuccess = ORDER filteredsuccess BY campaign DESC;
+grunt> 
+grunt> 
+grunt> --Calculate the top 5 highest amount of phone calls made.
+grunt> 
+grunt> orderedsuccesslimit = LIMIT orderedsuccess 5;
+grunt> 
+grunt> 
+grunt> 
+grunt> --Show the top 5 highest calls made to customers that had a successful outcome.
+grunt> 
+grunt> DUMP orderedsuccesslimit;
+(11,"success")
+(9,"success")
+(8,"success")
+(8,"success")
+(8,"success")
+grunt> 
+grunt> 
+grunt> 
+grunt> --Group the filtered successful relation to calculate an average.
+grunt> 
+grunt> groupedsuccess = GROUP filteredsuccess BY poutcome;
+grunt> 
+grunt> 
+grunt> --Calculate the average amount of contacts to a customer.
+grunt> 
+grunt> averagesuccess = FOREACH groupedsuccess GENERATE AVG(filteredsuccess.campaign);
+grunt> 
+grunt> 
+grunt> --Show the average amount of contacts to a customer.
+grunt> 
+grunt> DUMP averagesuccess;
+(1.8060886829913965)
+grunt> 
+grunt> 
+grunt> 
+grunt> --Filter data for the failed outcomes.
+grunt> 
+grunt> filteredfailure = FILTER countriesSchema BY poutcome=='"failure"';
+grunt> 
+grunt> 
+grunt> 
+grunt> -- Calculate the highest amounts of calls made to customers that had a failed outcome.
+grunt> 
+grunt> orderedfailure = ORDER filteredfailure BY campaign DESC;
+grunt> 
+grunt> 
+grunt> --Calculate the top 5 highest amount of phone calls made that failed.
+grunt> 
+grunt> orderedfailurelimit = LIMIT orderedfailure 5;
+grunt> 
+grunt> 
+grunt> --Show the top 5 highest calls made to customers that had a failed outcome.
+grunt> 
+grunt> DUMP orderedfailurelimit;
+(15,"failure")
+(14,"failure")
+(13,"failure")
+(12,"failure")
+(12,"failure")
+grunt> 
+grunt> 
+grunt> 
+grunt> --Group the filtered successful relation to calculate an average.
+grunt> 
+grunt> groupedfailure = GROUP filteredfailure BY poutcome;
+grunt> 
+grunt> --Calculate the average amount of contacts to a customer that failed.
+grunt> 
+grunt> averagefailure = FOREACH groupedfailure GENERATE AVG(filteredfailure.campaign);
+grunt> 
+grunt> --Show the average amount of contacts to a customer that failed.
+grunt> 
+grunt> DUMP averagefailure;
+(1.9808202407671904)
+grunt> 
+grunt> 
+grunt> /*Join the two relations to create a relation that contains only data with either a successful or failed calls and exclude data with an unknown outcome or an other outcome.
+grunt> */
+grunt> 
+grunt> joined = UNION filteredsuccess, filteredfailure;
+grunt> 
+grunt> 
+grunt> --Apply a filter again to divide into successful and failed calls.
+grunt> 
+grunt> filteredsuccess = FILTER joined BY poutcome=='"success"';
+grunt> 
+grunt> filteredfailure = FILTER joined BY poutcome=='"failure"';
+grunt> 
+grunt> 
+grunt> 
+grunt> --Create a relation for total calls where it groups all the columns for a calculation
+grunt> 
+grunt> totaljoined = GROUP joined ALL;
+grunt> 
+grunt> --Generate a count for total calls with an outcome in the data.
+grunt> 
+grunt> totalCalls = FOREACH totaljoined GENERATE group, COUNT(joined) AS joinedCounted;
+grunt> 
+grunt> --Flatten the count value for calculating a percentage;
+grunt> 
+grunt> totalCalls = FOREACH totalCalls GENERATE FLATTEN(joinedCounted); 
+grunt> 
+grunt> 
+grunt> 
+grunt> --Create a relation for successful calls where it groups all the columns for a calculation
+grunt> 
+grunt> joinedsuccess = GROUP filteredsuccess ALL;
+grunt> 
+grunt> --Generate a count for successful calls with an outcome in the data.
+grunt> 
+grunt> successCalls = FOREACH joinedsuccess GENERATE group, COUNT(filteredsuccess) AS filteredsuccessCounted;
+grunt> 
+grunt> --Flatten the count value for calculating a percentage;
+grunt> 
+grunt> successCalls = FOREACH successCalls GENERATE FLATTEN(filteredsuccessCounted); 
+grunt> 
+grunt> 
+grunt> --Create a relation for failed calls where it groups all the columns for a calculation
+grunt> 
+grunt> joinedfailure = GROUP filteredfailure ALL;
+grunt> 
+grunt> --Generate a count for successful calls with an outcome in the data.
+grunt> 
+grunt> failedCalls = FOREACH joinedfailure GENERATE group, COUNT(filteredfailure) AS filteredfailureCounted;
+grunt> 
+grunt> --Flatten the count value for calculating a percentage;
+grunt> 
+grunt> failedCalls = FOREACH failedCalls GENERATE FLATTEN(filteredfailureCounted); 
+grunt> 
+grunt> 
+grunt> /* Out of the joined relation where it only includes data with an outcome group all columns to produce a percentage.
+grunt> */
+grunt> 
+grunt> grouped = GROUP joined ALL;
+grunt> 
+grunt> --Calculate the percentage of successful calls from the total calls
+grunt> 
+grunt> percentage = FOREACH grouped GENERATE ((float)successCalls.filteredsuccessCounted/(float)totalCalls.joinedCounted)*100;
+grunt> 
+grunt> DUMP percentage;
+(23.56519)
+grunt> 
+grunt> 
+grunt> 

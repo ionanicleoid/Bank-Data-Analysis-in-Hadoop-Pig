@@ -1,0 +1,174 @@
+[training@localhost ~]$ pig -x local
+2021-07-23 10:09:10,213 INFO org.apache.pig.Main: Apache Pig version 0.10.0-cdh4.2.1 (rexported) compiled Apr 22 2013, 12:04:54
+2021-07-23 10:09:10,214 INFO org.apache.pig.Main: Logging error messages to: /home/training/pig_1627049350210.log
+grunt> run bankQ3
+grunt> --Question 3 
+grunt> 
+grunt> --Load data with data types assigned to each column.
+grunt> 
+grunt> data = lOAD 'bank-full.csv' USING PigStorage(';')AS (age:int, job:chararray, marital:chararray, education:chararray, default:chararray, balance:chararray, housing:chararray, loan:chararray, contact:chararray, day:int, month:chararray, duration:chararray, campaign:int, pdays:chararray, previous:chararray, poutcome:chararray, y:chararray);
+grunt> 
+grunt> 
+grunt> --Remove any duplicate values
+grunt> 
+grunt> data = DISTINCT data;
+grunt> 
+grunt> --Group data by every column to perform calculations
+grunt> 
+grunt> groupage = GROUP data ALL;
+grunt> 
+grunt> 
+grunt> --Calculate maximum age in dataset
+grunt> 
+grunt> maxAge = FOREACH groupage GENERATE group, MAX(data.age);
+grunt> 
+grunt> --Show maximum age
+grunt> 
+grunt> DUMP maxAge;
+(all,95)
+grunt> 
+grunt> 
+grunt> --Calculate minimum age in dataset
+grunt> 
+grunt> minAge = FOREACH groupage GENERATE group, MIN(data.age);
+grunt> 
+grunt> --Show minimum age
+grunt> 
+grunt> DUMP minAge;
+(all,18)
+grunt> 
+grunt> 
+grunt> 
+grunt> --select the successful campaigns
+grunt> 
+grunt> filtering = FILTER data BY poutcome=='"success"';
+grunt> 
+grunt> generated = FOREACH filtering GENERATE age, education, default, housing, loan;
+grunt> 
+grunt> --create age categories
+grunt> 
+grunt> SPLIT generated INTO 
+>>     age18to34 IF age>=18 AND age<34, 
+>>     age35to54 IF age>=35 AND age<54, 
+>>     age55to74 IF age>=55 AND age<74, 
+>>     age75to95 IF age>=75 AND age<95;
+grunt> 
+grunt> 
+grunt> 
+grunt> --Group by the education, default, housing, loan columns in the relation
+grunt> 
+grunt> grou18to34 = GROUP age18to34 BY (education, default, housing, loan);
+grunt> 
+grunt> --Count the top characteristics
+grunt> 
+grunt> grouped18to34 = FOREACH grou18to34 GENERATE group, COUNT(age18to34) AS counted18to34;
+grunt> 
+grunt> --Order top characteristics in descending order in terms of count
+grunt> 
+grunt> ordered18to34 = ORDER grouped18to34 BY counted18to34 DESC;
+grunt> 
+grunt> --Show the most common characteristics for age18to34
+grunt> 
+grunt> DUMP ordered18to34;
+(("tertiary","no","no","no"),174)
+(("secondary","no","no","no"),129)
+(("secondary","no","yes","no"),62)
+(("tertiary","no","yes","no"),53)
+(("primary","no","no","no"),10)
+(("unknown","no","no","no"),10)
+(("secondary","no","no","yes"),10)
+(("primary","no","yes","no"),6)
+(("secondary","no","yes","yes"),5)
+(("tertiary","no","yes","yes"),4)
+(("tertiary","no","no","yes"),3)
+(("unknown","no","yes","yes"),1)
+(("tertiary","yes","yes","yes"),1)
+(("unknown","no","yes","no"),1)
+(("secondary","yes","no","yes"),1)
+grunt> 
+grunt> 
+grunt> 
+grunt> --Group by the education, default, housing, loan columns in the relation
+grunt> 
+grunt> gru35to54 = GROUP age35to54 BY (education, default, housing, loan);
+grunt> 
+grunt> --Count the top characteristics
+grunt> 
+grunt> grouped35to54 = FOREACH gru35to54  GENERATE group, COUNT(age35to54) AS counted35to54;
+grunt> 
+grunt> --Order top characteristics in descending order in terms of count
+grunt> 
+grunt> ordered35to54 = ORDER grouped35to54 BY counted35to54 DESC;
+grunt> 
+grunt> --Show the most common characteristics for age35to54
+grunt> 
+grunt> DUMP ordered35to54;
+(("tertiary","no","no","no"),171)
+(("secondary","no","no","no"),132)
+(("secondary","no","yes","no"),130)
+(("tertiary","no","yes","no"),77)
+(("unknown","no","no","no"),30)
+(("primary","no","yes","no"),29)
+(("secondary","no","yes","yes"),13)
+(("tertiary","no","yes","yes"),10)
+(("primary","no","no","no"),9)
+(("unknown","no","yes","no"),7)
+(("secondary","no","no","yes"),7)
+(("tertiary","no","no","yes"),3)
+(("primary","no","yes","yes"),1)
+grunt> 
+grunt> 
+grunt> 
+grunt> --Group by the education, default, housing, loan columns in the relation
+grunt> 
+grunt> grou55to74 = GROUP age55to74 BY (education, default, housing, loan);
+grunt> 
+grunt> --Count the top characteristics
+grunt> 
+grunt> grouped55to74 = FOREACH grou55to74 GENERATE group, COUNT(age55to74) AS counted55to74;
+grunt> 
+grunt> --Order top characteristics in descending order in terms of count
+grunt> 
+grunt> ordered55to74 = ORDER grouped55to74 BY counted55to74 DESC;
+grunt> 
+grunt> --Show the most common characteristics for aged55to74
+grunt> 
+grunt> DUMP ordered55to74;
+(("secondary","no","no","no"),112)
+(("tertiary","no","no","no"),65)
+(("primary","no","no","no"),47)
+(("unknown","no","no","no"),15)
+(("secondary","no","yes","no"),14)
+(("tertiary","no","yes","no"),13)
+(("secondary","no","no","yes"),6)
+(("unknown","no","yes","no"),5)
+(("secondary","no","yes","yes"),3)
+(("tertiary","no","yes","yes"),2)
+(("primary","no","no","yes"),1)
+grunt> 
+grunt> 
+grunt> 
+grunt> --Group by the education, default, housing, loan columns in the relation
+grunt> 
+grunt> grou75to95 = GROUP age75to95 BY (education, default, housing, loan);
+grunt> 
+grunt> --Count the top characteristics
+grunt> 
+grunt> grouped75to95 = FOREACH grou75to95 GENERATE group, COUNT(age75to95) AS counted75to95;
+grunt> 
+grunt> --Order top characteristics in descending order in terms of count
+grunt> 
+grunt> ordered75to95 = ORDER grouped75to95 BY counted75to95 DESC;
+grunt> 
+grunt> --Show the most common characteristics for age75to95
+grunt> 
+grunt> DUMP ordered75to95;
+(("primary","no","no","no"),24)
+(("secondary","no","no","no"),13)
+(("unknown","no","no","no"),7)
+(("tertiary","no","no","no"),6)
+(("unknown","no","yes","no"),3)
+grunt> 
+grunt> 
+grunt> 
+grunt> 
